@@ -1,0 +1,5 @@
+{"id": "refund-window", "question": "How long do customers have to request a refund?", "answer_contains": ["30 days"], "relevant_doc_ids": ["policy-refunds"]}
+{"id": "colombo-delivery", "question": "How long does delivery take within Colombo?", "answer_contains": ["2 working days"], "relevant_doc_ids": ["shipping-times"]}
+{"id": "kettle-warranty", "question": "How long is the warranty on kettles?", "answer_contains": ["one year"], "relevant_doc_ids": ["warranty"]}
+{"id": "cash-on-delivery", "question": "Can I pay cash on delivery?", "answer_contains": ["cash on delivery"], "relevant_doc_ids": ["payment-methods"]}
+{"id": "delete-account", "question": "How do I delete my account?", "answer_contains": ["Settings"], "relevant_doc_ids": ["account-delete"]}
