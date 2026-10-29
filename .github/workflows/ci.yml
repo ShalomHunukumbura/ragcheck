@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: uv sync
+      - run: uv run pytest -q
+      - run: uv build
+
+  # Dogfood the Action: the example pipeline must pass, and the "harmless" change that
+  # trims every document to its first sentence must fail.
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Example pipeline passes
+        uses: ./
+        with:
+          dataset: examples/questions.jsonl
+          predictions: /tmp/good.jsonl
+          command: python examples/run_pipeline.py
+          k: "3"
+      - name: Trimmed documents fail
+        id: degraded
+        continue-on-error: true
+        uses: ./
+        with:
+          dataset: examples/questions.jsonl
+          predictions: /tmp/degraded.jsonl
+          command: RAGCHECK_DEGRADE=1 python examples/run_pipeline.py
+          k: "3"
+      - name: Assert the regression was caught
+        if: steps.degraded.outcome != 'failure'
+        run: |
+          echo "ragcheck should have failed on the trimmed documents"
+          exit 1
