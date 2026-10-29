@@ -1,0 +1,67 @@
+name: "RAG Regression Gate"
+description: "Run a RAG pipeline and fail when answer, grounding, or retrieval quality drops."
+inputs:
+  dataset:
+    description: "Path to the ragcheck JSONL dataset."
+    required: true
+  python-version:
+    description: "Python version for the action and pipeline command."
+    required: false
+    default: "3.12"
+  predictions:
+    description: "Path where the command writes prediction JSONL."
+    required: true
+  command:
+    description: "Shell command that runs your pipeline and writes predictions to the configured path."
+    required: true
+  min-answer-pass-rate:
+    description: "Minimum fraction of expected answers found."
+    required: false
+    default: "1.0"
+  min-grounded-pass-rate:
+    description: "Minimum fraction of answers supported by retrieved text."
+    required: false
+    default: "1.0"
+  min-retrieval-recall:
+    description: "Minimum mean retrieval recall at k."
+    required: false
+    default: "1.0"
+  k:
+    description: "Retrieval cutoff."
+    required: false
+    default: "5"
+branding:
+  icon: check-circle
+  color: purple
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v7
+      with:
+        python-version: ${{ inputs.python-version }}
+    - name: Install ragcheck from this action version
+      shell: bash
+      run: python -m pip install "$GITHUB_ACTION_PATH"
+    - name: Run RAG pipeline
+      shell: bash
+      env:
+        RAGCHECK_DATASET: ${{ inputs.dataset }}
+        RAGCHECK_PREDICTIONS: ${{ inputs.predictions }}
+        RAGCHECK_COMMAND: ${{ inputs.command }}
+      run: bash -euo pipefail -c "$RAGCHECK_COMMAND"
+    - name: Evaluate RAG quality
+      shell: bash
+      env:
+        RAGCHECK_DATASET: ${{ inputs.dataset }}
+        RAGCHECK_PREDICTIONS: ${{ inputs.predictions }}
+        RAGCHECK_K: ${{ inputs.k }}
+        RAGCHECK_MIN_ANSWER: ${{ inputs.min-answer-pass-rate }}
+        RAGCHECK_MIN_GROUNDED: ${{ inputs.min-grounded-pass-rate }}
+        RAGCHECK_MIN_RETRIEVAL: ${{ inputs.min-retrieval-recall }}
+      run: >-
+        ragcheck-ci --dataset "$RAGCHECK_DATASET"
+        --predictions "$RAGCHECK_PREDICTIONS"
+        --k "$RAGCHECK_K"
+        --min-answer-pass-rate "$RAGCHECK_MIN_ANSWER"
+        --min-grounded-pass-rate "$RAGCHECK_MIN_GROUNDED"
+        --min-retrieval-recall "$RAGCHECK_MIN_RETRIEVAL"
